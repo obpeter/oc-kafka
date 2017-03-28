@@ -14,6 +14,7 @@ RUN rm /opt/kafka/kafka_2.11-0.10.2.0.tgz
 RUN rm -r /opt/kafka/bin/windows
  
 COPY zookeeper-server-start-multiple.sh /opt/kafka/bin/
+COPY zookeeper-server-start-multi-single.sh /opt/kafka/bin/
 
 RUN mkdir /opt/kafka/certs
 COPY server.keystore.jks opt/kafka/certs/
