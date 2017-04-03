@@ -12,6 +12,7 @@ RUN rm /etc/yum.repos.d/rhel7.repo
 RUN cd /opt/kafka && tar xzvf kafka_2.11-0.10.2.0.tgz --strip-components=1
 RUN rm /opt/kafka/kafka_2.11-0.10.2.0.tgz
 RUN rm -r /opt/kafka/bin/windows
+RUN curl http://search.maven.org/remotecontent?filepath=org/jolokia/jolokia-jvm/1.3.6/jolokia-jvm-1.3.6-agent.jar -o /opt/kafka/libs/jolokia-jvm-1.3.6-agent.jar
  
 COPY zookeeper-server-start-multiple.sh /opt/kafka/bin/
 COPY zookeeper-server-start-multi-single.sh /opt/kafka/bin/
@@ -27,4 +28,4 @@ VOLUME /tmp/kafka-logs /tmp/zookeeper
 
 RUN mkdir /opt/kafka/custom
 
-EXPOSE 2181 2888 3888 9092 9093
+EXPOSE 2181 2888 3888 9092 9093 8778
