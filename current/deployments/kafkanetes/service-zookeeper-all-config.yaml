@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafkanetes-zk
+  namespace: explore-example
+  selfLink: /api/v1/namespaces/explore-example/services/kafkanetes-zk
+  uid: cda68de2-0d44-11e7-b4e0-005056112152
+  resourceVersion: '983004'
+  creationTimestamp: '2017-03-20T08:11:21Z'
+  labels:
+    app: kafkanetes-deploy-zk-3
+spec:
+  ports:
+    - name: 2181-tcp
+      protocol: TCP
+      port: 2181
+      targetPort: 2181
+    - name: 2888-tcp
+      protocol: TCP
+      port: 2888
+      targetPort: 2888
+    - name: 3888-tcp
+      protocol: TCP
+      port: 3888
+      targetPort: 3888
+  selector:
+    app: kafkanetes-zk
+  clusterIP: 172.30.2.35
+  type: ClusterIP
+  sessionAffinity: None
+status:
+  loadBalancer: {}

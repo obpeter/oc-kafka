@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    pv.kubernetes.io/bind-completed: "yes"
+    pv.kubernetes.io/bound-by-controller: "yes"
+  creationTimestamp: 2017-03-16T16:45:00Z
+  labels:
+    app: kafkanetes-deploy-zk-3
+  name: kafkanetes-zk-1
+  namespace: explore-example
+  resourceVersion: "765192"
+  selfLink: /api/v1/namespaces/explore-example/persistentvolumeclaims/kafkanetes-zk-1
+  uid: e56ee510-0a67-11e7-b4e0-005056112152
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 512Mi
+  volumeName: kafka-vol3
+status:
+  accessModes:
+  - ReadWriteMany
+  capacity:
+    storage: 10Gi
+  phase: Bound

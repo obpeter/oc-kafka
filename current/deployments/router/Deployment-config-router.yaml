@@ -1,0 +1,156 @@
+apiVersion: v1
+kind: DeploymentConfig
+metadata:
+  name: router
+  namespace: default
+  selfLink: /oapi/v1/namespaces/default/deploymentconfigs/router
+  uid: be2ecf0d-fe9c-11e6-9734-005056112152
+  resourceVersion: '2382701'
+  generation: 11
+  creationTimestamp: '2017-03-01T16:33:04Z'
+  labels:
+    router: router
+spec:
+  strategy:
+    type: Rolling
+    rollingParams:
+      updatePeriodSeconds: 1
+      intervalSeconds: 1
+      timeoutSeconds: 600
+      maxUnavailable: 25%
+      maxSurge: 0
+    resources: {}
+  triggers:
+    - type: ConfigChange
+  replicas: 2
+  test: false
+  selector:
+    router: router
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        router: router
+    spec:
+      volumes:
+        - name: server-certificate
+          secret:
+            secretName: router-certs
+            defaultMode: 420
+        - name: config-volume
+          configMap:
+            name: customrouter
+            defaultMode: 420
+      containers:
+        - name: router
+          image: 'openshift3/ose-haproxy-router:v3.4.1.7'
+          ports:
+            - hostPort: 80
+              containerPort: 80
+              protocol: TCP
+            - hostPort: 443
+              containerPort: 443
+              protocol: TCP
+            - name: stats
+              hostPort: 1936
+              containerPort: 1936
+              protocol: TCP
+            - name: kafka
+              hostPort: 9093
+              containerPort: 9093
+              protocol: TCP
+          env:
+            - name: DEFAULT_CERTIFICATE_DIR
+              value: /etc/pki/tls/private
+            - name: ROUTER_EXTERNAL_HOST_HOSTNAME
+            - name: ROUTER_EXTERNAL_HOST_HTTPS_VSERVER
+            - name: ROUTER_EXTERNAL_HOST_HTTP_VSERVER
+            - name: ROUTER_EXTERNAL_HOST_INSECURE
+              value: 'false'
+            - name: ROUTER_EXTERNAL_HOST_INTERNAL_ADDRESS
+            - name: ROUTER_EXTERNAL_HOST_PARTITION_PATH
+            - name: ROUTER_EXTERNAL_HOST_PASSWORD
+            - name: ROUTER_EXTERNAL_HOST_PRIVKEY
+              value: /etc/secret-volume/router.pem
+            - name: ROUTER_EXTERNAL_HOST_USERNAME
+            - name: ROUTER_EXTERNAL_HOST_VXLAN_GW_CIDR
+            - name: ROUTER_SERVICE_HTTPS_PORT
+              value: '443'
+            - name: ROUTER_SERVICE_HTTP_PORT
+              value: '80'
+            - name: ROUTER_SERVICE_NAME
+              value: router
+            - name: ROUTER_SERVICE_NAMESPACE
+              value: default
+            - name: ROUTER_SUBDOMAIN
+            - name: STATS_PASSWORD
+              value: nNV2Ey9Vuz
+            - name: STATS_PORT
+              value: '1936'
+            - name: STATS_USERNAME
+              value: admin
+            - name: TEMPLATE_FILE
+              value: /var/lib/haproxy/conf/custom/haproxy-config.template
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          volumeMounts:
+            - name: server-certificate
+              readOnly: true
+              mountPath: /etc/pki/tls/private
+            - name: config-volume
+              mountPath: /var/lib/haproxy/conf/custom
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 1936
+              host: localhost
+              scheme: HTTP
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 1936
+              host: localhost
+              scheme: HTTP
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          terminationMessagePath: /dev/termination-log
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        region: infra
+      serviceAccountName: router
+      serviceAccount: router
+      hostNetwork: true
+      securityContext: {}
+status:
+  latestVersion: 6
+  observedGeneration: 11
+  replicas: 2
+  updatedReplicas: 2
+  availableReplicas: 2
+  details:
+    message: config change
+    causes:
+      - type: ConfigChange
+  conditions:
+    - type: Available
+      status: 'True'
+      lastTransitionTime: '2017-03-27T11:10:46Z'
+      message: Deployment config has minimum availability.
+    - type: Progressing
+      status: 'True'
+      lastTransitionTime: '2017-03-27T14:30:12Z'
+      reason: NewReplicationControllerAvailable
+      message: Replication controller "router-6" has completed progressing

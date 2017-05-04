@@ -1,0 +1,123 @@
+apiVersion: v1
+kind: DeploymentConfig
+metadata:
+  name: kafkanetes-kafka-1
+  namespace: explore-example
+  selfLink: /oapi/v1/namespaces/explore-example/deploymentconfigs/kafkanetes-kafka-1
+  uid: 47b2b0fe-0d44-11e7-b4e0-005056112152
+  resourceVersion: '1899343'
+  generation: 60
+  creationTimestamp: '2017-03-20T08:07:36Z'
+  labels:
+    app: kafkanetes-deploy-kafka-2
+spec:
+  strategy:
+    type: Rolling
+    rollingParams:
+      updatePeriodSeconds: 1
+      intervalSeconds: 1
+      timeoutSeconds: 600
+      maxUnavailable: 25%
+      maxSurge: 25%
+    resources: {}
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        containerNames:
+          - kafkanetes
+        from:
+          kind: ImageStreamTag
+          namespace: explore-example
+          name: '172.30.10.104:5000/explore-example/kafkanetes'
+  replicas: 1
+  test: false
+  selector:
+    deploymentconfig: kafkanetes-kafka-1
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: kafkanetes-kafka
+        deploymentconfig: kafkanetes-kafka-1
+    spec:
+      volumes:
+        - name: kafka-logs
+          persistentVolumeClaim:
+            claimName: kafkanetes-zk-3
+        - name: server-keystore
+          secret:
+            secretName: kafkanetes-tls-1
+            defaultMode: 420
+        - name: hawkular-openshift-agent
+          configMap:
+            name: hawkular-openshift-agent-kafkanetes
+            defaultMode: 420
+      containers:
+        - name: kafkanetes
+          image: '172.30.10.104:5000/explore-example/kafkanetes'
+          command:
+            - bin/kafka-server-start.sh
+          args:
+            - config/server.properties
+            - '--override'
+            - zookeeper.connect=kafkanetes-zk
+            - '--override'
+            - broker.id=0
+            - '--override'
+            - 'listeners=PLAINTEXT://:9092,SSL://:9093'
+            - '--override'
+            - >-
+              advertised.listeners=PLAINTEXT://kafkanetes-kafka-1:9092,SSL://kafkanetes-kafka-1.fhm.de:9093
+            - '--override'
+            - ssl.endpoint.identification.algorithm=HTTPS
+            - '--override'
+            - ssl.keystore.location=/opt/kafka/certs/server-0.keystore.jks
+            - '--override'
+            - ssl.keystore.password=changeit
+            - '--override'
+            - ssl.truststore.location=/opt/kafka/certs/server-0.keystore.jks
+            - '--override'
+            - ssl.truststore.password=changeit
+          ports:
+            - containerPort: 9092
+              protocol: TCP
+            - containerPort: 9093
+              protocol: TCP
+            - containerPort: 8778
+              protocol: TCP
+          env:
+            - name: KAFKA_OPTS
+              value: >-
+                -javaagent:/opt/kafka/libs/jolokia.jar=port=8778,protocol=http,extraClientCheck=true,host=0.0.0.0,discoveryEnabled=false
+          resources: {}
+          volumeMounts:
+            - name: server-keystore
+              readOnly: true
+              mountPath: /opt/kafka/certs/
+            - name: kafka-logs
+              mountPath: /tmp/kafka-logs
+          terminationMessagePath: /dev/termination-log
+          imagePullPolicy: Always
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      serviceAccountName: kafkabroker
+      serviceAccount: kafkabroker
+      securityContext: {}
+status:
+  latestVersion: 27
+  observedGeneration: 60
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+  conditions:
+    - type: Progressing
+      status: 'True'
+      lastTransitionTime: '2017-04-04T08:04:30Z'
+      reason: NewReplicationControllerAvailable
+      message: Replication controller "kafkanetes-kafka-1-27" has completed progressing
+    - type: Available
+      status: 'True'
+      lastTransitionTime: '2017-04-04T08:04:33Z'
+      message: Deployment config has minimum availability.

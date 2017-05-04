@@ -1,0 +1,28 @@
+10apiVersion: v1
+kind: PersistentVolume
+metadata:
+  annotations:
+    pv.kubernetes.io/bound-by-controller: "yes"
+  creationTimestamp: 2017-03-17T10:46:26Z
+  name: kafka-vol2
+  resourceVersion: "804146"
+  selfLink: /api/v1/persistentvolumes/kafka-vol2
+  uid: f8c45ef8-0afe-11e7-b4e0-005056112152
+spec:
+  accessModes:
+  - ReadWriteMany
+  capacity:
+    storage: 10Gi
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: kafkanetes-zk-2
+    namespace: explore-example
+    resourceVersion: "804144"
+    uid: 3d792cb6-0aff-11e7-b4e0-005056112152
+  nfs:
+    path: /exports/kafka
+    server: app-cispark-v2
+  persistentVolumeReclaimPolicy: Retain
+status:
+  phase: Bound

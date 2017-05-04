@@ -126,6 +126,7 @@ objects:
             name: kafka-logs
           ports:
           - containerPort: 9092
+            hostPort: 9092
         volumes:
         - name: kafka-logs
           persistentVolumeClaim:

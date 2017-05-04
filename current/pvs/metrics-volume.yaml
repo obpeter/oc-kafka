@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: metrics-volume
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  nfs:
+    # FIXME: use the right IP
+     server: app-cimaster-v1
+     path: "/exports/metrics"

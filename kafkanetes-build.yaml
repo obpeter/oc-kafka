@@ -23,6 +23,7 @@ objects:
     name: ${OBJECT_NAME_PREFIX}
   spec:
     dockerImageRepository: "docker-registry.default:5000/${OBJECT_NAME_PREFIX}"
+    
 - apiVersion: v1
   kind: BuildConfig
   metadata:

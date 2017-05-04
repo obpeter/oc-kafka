@@ -1,0 +1,302 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: kafkanetes-deploy-kafka-2
+  annotations:
+    description: 2-pod Kafka
+    tags: messaging,kafka
+
+parameters:
+- name: KAFKA_SECRET_NAME_PREFIX
+  description: Name prefix for kafka secret mount
+  required: true
+  value: kafkanetes-tls
+- name: KAFKA_JOLOKIA_NAME_PREFIX
+  description: Name prefix for kafka monitoring configuration
+  required: true
+  value: khawkular-openshift-agent-kafkanetes
+- name: OBJECT_NAME_PREFIX
+  description: Name prefix for each object created
+  required: true
+  value: kafkanetes-kafka
+- name: PVC_NAME_PREFIX
+  description: Name prefix for persistent volume claim
+  required: true
+  value: kafkanetes-zookeeper
+- name: ZOOKEEPER_SERVICE
+  description: DNS name of ZooKeeper service
+  required: true
+  value: kafkanetes-zookeeper
+- name: IMAGESTREAM
+  description: Kafkanetes imagestream name
+  required: true
+  value: 172.30.10.104:5000/explore-example/kafkanetes
+
+objects:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: ${OBJECT_NAME_PREFIX}-1
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: ${OBJECT_NAME_PREFIX}-1
+    template:
+      metadata:
+        labels:
+          app: ${OBJECT_NAME_PREFIX}
+          deploymentconfig: ${OBJECT_NAME_PREFIX}-1
+      spec:
+        containers:
+        - name: kafkanetes
+          image: ${IMAGESTREAM}
+          command:
+          - bin/kafka-server-start.sh
+          args:
+          - config/server.properties
+          - --override
+          - zookeeper.connect=${ZOOKEEPER_SERVICE}
+          - --override
+          - broker.id=0
+          - '--override'
+          - listeners='PLAINTEXT://:9092,SSL://:9093'
+          - '--override'
+          - advertised.listeners='PLAINTEXT://${OBJECT_NAME_PREFIX}-1:9092,SSL://${OBJECT_NAME_PREFIX}-1.fhm.de:9093'
+          - '--override'
+          - ssl.endpoint.identification.algorithm=HTTPS
+          - '--override'
+          - ssl.keystore.location=/opt/kafka/certs/server-0.keystore.jks
+          - '--override'
+          - ssl.keystore.password=changeit
+          - '--override'
+          - ssl.truststore.location=/opt/kafka/certs/server-0.keystore.jks
+          - '--override'
+          - ssl.truststore.password=changeit
+          env:
+          - name: KAFKA_OPTS
+            value: '-javaagent:/opt/kafka/libs/jolokia.jar=port=8778,protocol=http,extraClientCheck=true,host=0.0.0.0,discoveryEnabled=false'
+          volumeMounts:
+          - mountPath: /tmp/kafka-logs
+            name: kafka-logs
+          ports:
+          - containerPort: 9092
+          - containerPort: 9093
+          - containerPort: 8778
+        volumes:
+        - name: kafka-logs
+          persistentVolumeClaim:
+            claimName: ${PVC_NAME_PREFIX}-1
+        - name: server-keystore
+          secret:
+            secretName: ${KAFKA_SECRET_NAME_PREFIX}-1
+        - name: hawkular-openshift-agent
+          configMap:
+            name: ${KAFKA_JOLOKIA_NAME_PREFIX}
+    triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: false
+        containerNames:
+        - kafkanetes
+        from:
+          kind: ImageStream
+          name: ${IMAGESTREAM}
+
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: ${OBJECT_NAME_PREFIX}-2
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: ${OBJECT_NAME_PREFIX}-2
+    template:
+      metadata:
+        labels:
+          app: ${OBJECT_NAME_PREFIX}
+          deploymentconfig: ${OBJECT_NAME_PREFIX}-2
+      spec:
+        containers:
+        - name: kafkanetes
+          image: ${IMAGESTREAM}
+          command:
+          - bin/kafka-server-start.sh
+          args:
+          - config/server.properties
+          - --override
+          - zookeeper.connect=${ZOOKEEPER_SERVICE}
+          - --override
+          - broker.id=1
+          - '--override'
+          - listeners='PLAINTEXT://:9092,SSL://:9093'
+          - '--override'
+          - advertised.listeners='PLAINTEXT://${OBJECT_NAME_PREFIX}-2:9092,SSL://${OBJECT_NAME_PREFIX}-2.fhm.de:9093'
+          - '--override'
+          - ssl.endpoint.identification.algorithm=HTTPS
+          - '--override'
+          - ssl.keystore.location=/opt/kafka/certs/server-1.keystore.jks
+          - '--override'
+          - ssl.keystore.password=changeit
+          - '--override'
+          - ssl.truststore.location=/opt/kafka/certs/server-1.keystore.jks
+          - '--override'
+          - ssl.truststore.password=changeit
+          env:
+          - name: KAFKA_OPTS
+            value: '-javaagent:/opt/kafka/libs/jolokia.jar=port=8778,protocol=http,extraClientCheck=true,host=0.0.0.0,discoveryEnabled=false'
+          volumeMounts:
+          - name: server-keystore
+            readOnly: true
+            mountPath: /opt/kafka/certs/
+          - name: kafka-logs
+            mountPath: /tmp/kafka-logs
+          ports:
+          - containerPort: 9092
+          - containerPort: 9093
+          - containerPort: 8778
+        volumes:
+        - name: kafka-logs
+          persistentVolumeClaim:
+            claimName: ${PVC_NAME_PREFIX}-2
+        - name: server-keystore
+          secret:
+            secretName: ${KAFKA_SECRET_NAME_PREFIX}-2
+        - name: hawkular-openshift-agent
+          configMap:
+            name: ${KAFKA_JOLOKIA_NAME_PREFIX}
+    triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: false
+        containerNames:
+        - kafkanetes
+        from:
+          kind: ImageStream
+          name: ${IMAGESTREAM}
+
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: ${OBJECT_NAME_PREFIX}-3
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: ${OBJECT_NAME_PREFIX}-3
+    template:
+      metadata:
+        labels:
+          app: ${OBJECT_NAME_PREFIX}
+          deploymentconfig: ${OBJECT_NAME_PREFIX}-3
+      spec:
+        containers:
+        - name: kafkanetes
+          image: ${IMAGESTREAM}
+          command:
+          - bin/kafka-server-start.sh
+          args:
+          - config/server.properties
+          - --override
+          - zookeeper.connect=${ZOOKEEPER_SERVICE}
+          - --override
+          - broker.id=1
+          - '--override'
+          - listeners='PLAINTEXT://:9092,SSL://:9093'
+          - '--override'
+          - advertised.listeners='PLAINTEXT://${OBJECT_NAME_PREFIX}-3:9092,SSL://${OBJECT_NAME_PREFIX}-3.fhm.de:9093'
+          - '--override'
+          - ssl.endpoint.identification.algorithm=HTTPS
+          - '--override'
+          - ssl.keystore.location=/opt/kafka/certs/server-2.keystore.jks
+          - '--override'
+          - ssl.keystore.password=changeit
+          - '--override'
+          - ssl.truststore.location=/opt/kafka/certs/server-2.keystore.jks
+          - '--override'
+          - ssl.truststore.password=changeit
+          env:
+          - name: KAFKA_OPTS
+            value: '-javaagent:/opt/kafka/libs/jolokia.jar=port=8778,protocol=http,extraClientCheck=true,host=0.0.0.0,discoveryEnabled=false'
+          volumeMounts:
+          - name: server-keystore
+            readOnly: true
+            mountPath: /opt/kafka/certs/
+          - name: kafka-logs
+            mountPath: /tmp/kafka-logs
+          ports:
+          - containerPort: 9092
+          - containerPort: 9093
+          - containerPort: 8778
+        volumes:
+        - name: kafka-logs
+          persistentVolumeClaim:
+            claimName: ${PVC_NAME_PREFIX}-3
+        - name: server-keystore
+          secret:
+            secretName: ${KAFKA_SECRET_NAME_PREFIX}-3
+        - name: hawkular-openshift-agent
+          configMap:
+            name: ${KAFKA_JOLOKIA_NAME_PREFIX}
+    triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: false
+        containerNames:
+        - kafkanetes
+        from:
+          kind: ImageStream
+          name: ${IMAGESTREAM}
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: ${OBJECT_NAME_PREFIX}-1
+  spec:
+    ports:
+    - name: 9093-secure
+      port: 9093
+    - name: 9092-tcp
+      port: 9092
+    selector:
+      deploymentconfig: ${OBJECT_NAME_PREFIX}-1
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: ${OBJECT_NAME_PREFIX}-2
+  spec:
+    ports:
+    - name: 9093-secure
+      port: 9093
+    - name: 9092-tcp
+      port: 9092
+    selector:
+      deploymentconfig: ${OBJECT_NAME_PREFIX}-2
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: ${OBJECT_NAME_PREFIX}-3
+  spec:
+    ports:
+    - name: 9093-secure
+      port: 9093
+    - name: 9092-tcp
+      port: 9092
+    selector:
+      deploymentconfig: ${OBJECT_NAME_PREFIX}-3
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: ${OBJECT_NAME_PREFIX}
+  spec:
+    ports:
+    - name: 9093-secure
+      port: 9093
+    - name: 9092-tcp
+      port: 9092
+    selector:
+      app: ${OBJECT_NAME_PREFIX}

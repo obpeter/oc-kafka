@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: kafka-vol4
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    # FIXME: use the right IP
+    server: bcs-nas3.prod.fhm.de
+    path: "/ifs/data/vol6/stargate_ci_dev/kafka_vol4"
