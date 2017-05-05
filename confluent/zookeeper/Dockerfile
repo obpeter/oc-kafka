@@ -23,3 +23,5 @@ EXPOSE 2181 2888 3888
 
 USER confluent
 ENTRYPOINT ["/usr/local/bin/zk-docker.sh"]
+
+RUN ["chmod", "-R", "a=u", "/var/log/zookeeper", "/var/lib/zookeeper", "/etc/kafka/zookeeper.properties"]
