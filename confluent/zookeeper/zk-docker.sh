@@ -28,6 +28,11 @@ if [ ! -z "$ZK_CFG_URL" ]; then
   fi
 fi
 
+#
+cat ${ZK_CFG_FILE} | sed \
+  -e "s|{{SERVICE_NAME_PREFIX}}|${SERVICE_NAME_PREFIX:-}|g" \
+  > ${ZK_CFG_FILE}
+
 # Set Zookeeper ID
 echo $zk_id > $zk_dataDir/myid
 
