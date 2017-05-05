@@ -13,6 +13,8 @@ RUN ["mkdir", "-p", "/var/log/zookeeper", "/var/lib/zookeeper"]
 RUN ["chown", "-R", "confluent", "/var/log/zookeeper", "/var/lib/zookeeper", "/etc/kafka/zookeeper.properties"]
 RUN ["chmod", "+x", "/usr/local/bin/zk-docker.sh"]
 
+RUN ["chmod", "-R", "a=u", "/var/log/zookeeper", "/var/lib/zookeeper", "/etc/kafka/zookeeper.properties"]
+
 RUN curl -Lo /usr/share/java/kafka/jolokia.jar http://search.maven.org/remotecontent?filepath=org/jolokia/jolokia-jvm/1.3.6/jolokia-jvm-1.3.6-agent.jar
 
 VOLUME ["/var/log/zookeeper", "/var/lib/zookeeper"]
@@ -24,4 +26,3 @@ EXPOSE 2181 2888 3888
 USER confluent
 ENTRYPOINT ["/usr/local/bin/zk-docker.sh"]
 
-RUN ["chmod", "-R", "a=u", "/var/log/zookeeper", "/var/lib/zookeeper", "/etc/kafka/zookeeper.properties"]
