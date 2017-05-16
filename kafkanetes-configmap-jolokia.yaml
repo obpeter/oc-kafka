@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hawkular-openshift-agent-kafkanetes
+  labels:
+    name: hawkular-openshift-agent-kafkanetes
+    hawkular-openshift-agent-example: jolokia-wildfly
+data:
+  hawkular-openshift-agent: |
+    endpoints:
+    - type: jolokia
+      protocol: http
+      port: 8778
+      path: /jolokia/
+      collection_interval: 15s
+      metrics:
+      - name: kafka.server:type=ReplicaManager,name=UnderReplicatedPartitions#Value
+        type: gauge
+        description: "Number of under-replicated partitions"
+        tags:
+          descriptor_name: UnderReplicatedPartitions
+          container_name: ${POD:label[deploymentconfig]}
+      - name: kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec#MeanRate
+        type: gauge
+        description: "Aggregate incoming message rate"
+        tags:
+          descriptor_name: MessagesInPerSec
+          container_name: ${POD:label[deploymentconfig]}
+      - name: kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec#MeanRate
+        type: gauge
+        description: "incoming bytes per second"
+        tags:
+          descriptor_name: BytesInPerSec
+          container_name: ${POD:label[deploymentconfig]}
+      - name: kafka.server:type=BrokerTopicMetrics,name=BytesOutPerSec#MeanRate
+        type: gauge
+        description: "outgoing bytes per second"
+        tags:
+          descriptor_name: BytesOutPerSec
+          container_name: ${POD:label[deploymentconfig]}
+      - name: kafka.network:type=RequestMetrics,name=RequestsPerSec,request=Produce#MeanRate
+        type: gauge
+        description: "Number of requests per second"
+        tags:
+          descriptor_name: RequestsPerSec/Produce
+          container_name: ${POD:label[deploymentconfig]}
+          metric_name: RequestsPerSec_Produce
+      - name: kafka.network:type=RequestMetrics,name=RequestsPerSec,request=FetchConsumer#MeanRate
+        type: gauge
+        description: "Number of requests per second"
+        tags:
+          descriptor_name: RequestsPerSec/FetchConsumer
+          container_name: ${POD:label[deploymentconfig]}
+      - name: kafka.network:type=RequestMetrics,name=RequestsPerSec,request=FetchFollower#MeanRate
+        type: gauge
+        description: "Number of requests per second"
+        tags:
+          descriptor_name: RequestsPerSec/FetchFollower
+          container_name: ${POD:label[deploymentconfig]}
+      - name: afka.network:type=RequestMetrics,name=TotalTimeMs,request=Produce#MeanRate
+        type: gauge
+        description: "Total time it takes to process a request. You can also monitor split times for QueueTimeMs, LocalTimeMs, RemoteTimeMs and RemoteTimeMs"
+        tags:
+          descriptor_name: TotalTimeMs/Produce
+          container_name: ${POD:label[deploymentconfig]}
+      - name: afka.network:type=RequestMetrics,name=TotalTimeMs,request=FetchConsumer#MeanRate
+        type: gauge
+        description: "Total time it takes to process a request. You can also monitor split times for QueueTimeMs, LocalTimeMs, RemoteTimeMs and RemoteTimeMs"
+        tags:
+          descriptor_name: TotalTimeMs/FetchConsumer
+          container_name: ${POD:label[deploymentconfig]}
+      - name: afka.network:type=RequestMetrics,name=TotalTimeMs,request=FetchFollower#MeanRate
+        type: gauge
+        description: "Total time it takes to process a request. You can also monitor split times for QueueTimeMs, LocalTimeMs, RemoteTimeMs and RemoteTimeMs"
+        tags:
+          descriptor_name: TotalTimeMs/FetchFollower
+          container_name: ${POD:label[deploymentconfig]}
+      - name: kafka.log:type=LogFlushStats,name=LogFlushRateAndTimeMs#MeanRate
+        type: gauge
+        description: Asynchronous disk log flush and time in ms
+        tags:
+          descriptor_name: LogFlushRateAndTimeMs
+          container_name: ${POD:label[deploymentconfig]}

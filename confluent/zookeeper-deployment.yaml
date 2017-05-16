@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: zookeeper-deploy
+  annotations:
+    description: Zookeeper deployment including with appropriate service configuration
+    tags: messaging,zookeeper
+
+parameters:
+- name: OBJECT_NAME_PREFIX
+  description: Name prefix for each object created
+  required: true
+  value: p7-kafka-zk
+- name: PERSISTENT_NAME_PREFIX
+  description: Name prefix for persistent storage claim
+  required: true
+  value: p7-kafka-vol
+- name: ZOOKEEPER_ID
+  description: Current zookeeper id
+  required: true
+  value: '1'
+- name: IMAGESTREAMTAG
+  description: Kafkanetes imagestream name
+  required: true
+  value: zookeeper
+
+objects:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: ${OBJECT_NAME_PREFIX}-${ZOOKEEPER_ID}
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: ${OBJECT_NAME_PREFIX}-${ZOOKEEPER_ID}
+    template:
+      metadata:
+        labels:
+          app: ${OBJECT_NAME_PREFIX}
+          deploymentconfig: ${OBJECT_NAME_PREFIX}-${ZOOKEEPER_ID}
+      spec:
+        containers:
+        - name: confluent-zk
+          env:
+          - name: ZK_CFG_TEMPLATE
+            value: /etc/kafka/custom/zookeeper.properties
+          - name: zk_id
+            value: ${ZOOKEEPER_ID}
+          - name: SERVICE_NAME_PREFIX
+            value: p7-kafka-zk
+          volumeMounts:
+          - mountPath: /var/lib/zookeeper
+            name: zookeeper
+          - mountPath: /etc/kafka/custom
+            name: config-volume
+          ports:
+          - containerPort: 2181
+            hostPort: 2181
+          - containerPort: 2888
+          - containerPort: 3888
+        volumes:
+        - name: zookeeper
+          persistentVolumeClaim:
+            claimName: ${PERSISTENT_NAME_PREFIX}${ZOOKEEPER_ID}
+        - name: config-volume
+          configMap:
+            name: zk-config
+        nodeSelector:
+          broker: app-cikafka-v${ZOOKEEPER_ID}
+      securityContext:
+        supplementalGroups:
+        - 12346
+      serviceAccountName: kafkabroker          
+    triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+        - confluent-zk
+        from:
+          kind: ImageStreamTag
+          name: confluent:${IMAGESTREAMTAG}
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: ${OBJECT_NAME_PREFIX}-${ZOOKEEPER_ID}
+  spec:
+    ports:
+    - name: 2181-tcp
+      port: 2181
+    - name: 2888-tcp
+      port: 2888
+    - name: 3888-tcp
+      port: 3888
+    selector:
+      deploymentconfig: ${OBJECT_NAME_PREFIX}-${ZOOKEEPER_ID}

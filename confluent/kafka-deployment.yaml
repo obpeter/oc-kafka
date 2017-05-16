@@ -1,0 +1,121 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: kafka-deploy
+  annotations:
+    description: Kafka deployment with appropriate service configuration included
+    tags: messaging,kafka
+
+parameters:
+- name: OBJECT_NAME_PREFIX
+  description: Name prefix for each object created
+  required: true
+  value: p7-kafka
+- name: PERSISTENT_NAME_PREFIX
+  description: Name prefix for persistent storage claim
+  required: true
+  value: p7-kafka-vol
+- name: KAFKA_ID
+  description: Current kafka broker id
+  required: true
+  value: '1'
+- name: ZOOKEEPER_ADVERTISED_HOST
+  description: Advertised Host 
+  required: true
+  value: '172.22.120.73'
+- name: ZOOKEEPER_ADVERTISED_HOST_PLAINTEXT
+  description: Advertised Host 
+  required: true
+  value: 'kafka-broker-1.kafkaint.fhm.de'
+- name: IMAGESTREAMTAG
+  description: Kafka imagestream tag
+  required: true
+  value: kafka
+
+objects:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: ${OBJECT_NAME_PREFIX}-${KAFKA_ID}
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: ${OBJECT_NAME_PREFIX}-${KAFKA_ID}
+    template:
+      metadata:
+        labels:
+          app: ${OBJECT_NAME_PREFIX}
+          deploymentconfig: ${OBJECT_NAME_PREFIX}-${KAFKA_ID}
+      spec:
+        containers:
+        - name: confluent-kafka
+          command:
+          - /usr/bin/kafka-server-start
+          args:
+          - /etc/kafka/server.properties
+          - --override
+          - zookeeper.connect=p7-kafka-zk
+          - --override
+          - broker.id=${KAFKA_ID}
+          - --override
+          - listeners=PLAINTEXT://:9092,SSL://:9093
+          - --override
+          - advertised.listeners=PLAINTEXT://${ZOOKEEPER_ADVERTISED_HOST}:9092,SSL://${ZOOKEEPER_ADVERTISED_HOST_PLAINTEXT}:9093
+          - --override
+          - ssl.endpoint.identification.algorithm=HTTPS
+          - --override
+          - ssl.keystore.location=/etc/security/broker-${KAFKA_ID}.keystore.jks
+          - --override
+          - ssl.keystore.password=test1234
+          - --override
+          - ssl.truststore.location=/etc/security/broker-${KAFKA_ID}.truststore.jks
+          - --override
+          - ssl.truststore.password=test1234
+          env:
+          - name:  KAFKA_OPTS
+            value: '-javaagent:/usr/share/java/kafka/jolokia.jar=port=8778,protocol=http,extraClientCheck=true,host=0.0.0.0,discoveryEnabled=false'
+          volumeMounts:
+          - mountPath: /etc/security
+            name: server-keystore
+          - mountPath: /var/lib/kafka
+            name: kafka-logs
+          ports:
+          - containerPort: 9092
+            hostPort: 9092
+          - containerPort: 9093
+        volumes:
+        - name: kafka-logs
+          persistentVolumeClaim:
+            claimName: ${PERSISTENT_NAME_PREFIX}${KAFKA_ID}
+        - name: server-keystore
+          secret:
+            secretName: kafka-broker-${KAFKA_ID}-tls
+        nodeSelector:
+          broker: app-cikafka-v${KAFKA_ID}
+      securityContext:
+        supplementalGroups:
+        - 12346
+      serviceAccountName: kafkabroker          
+    triggers:
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+        - confluent-kafka
+        from:
+          kind: ImageStreamTag
+          name: confluent:${IMAGESTREAMTAG}
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: ${OBJECT_NAME_PREFIX}-${KAFKA_ID}
+  spec:
+    ports:
+    - name: 9092-tcp
+      port: 9092
+    - name: 9093-tcp
+      port: 9093
+    selector:
+      deploymentconfig: ${OBJECT_NAME_PREFIX}-${KAFKA_ID}
+      
